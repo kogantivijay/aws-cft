@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda function for creating EBS volume mappings
+
+Resources:
+  EBSVolumeMappingsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      InlineCode: |
+        import json
+        import boto3
+        from botocore.exceptions import ClientError
+        
+        def handler(event, context):
+            try:
+                ebs_volumes = json.loads(event["ResourceProperties"]["EBSVolumes"])
+            except (json.JSONDecodeError, KeyError) as error:
+                response = {
+                    "Status": "FAILED",
+                    "Reason": "Failed to parse EBSVolumes JSON string: " + str(error),
+                    "PhysicalResourceId": "EBSVolumeMappings",
+                    "StackId": event["StackId"],
+                    "RequestId": event["RequestId"],
+                    "LogicalResourceId": event["LogicalResourceId"],
+                }
+                send_response(event, response)
+                return
+            
+            mappings = [
+                {
+                    "DeviceName": volume["DeviceName"],
+                    "Ebs": {
+                        "VolumeType": volume["VolumeType"],
+                        "Iops": volume["Iops"],
+                        "KmsKeyId": volume["KmsKeyId"],
+                        "Throughput": volume["Throughput"],
+                        "Encrypted": volume["Encrypted"],
+                        "SnapshotId": volume["SnapshotId"],
+                    },
+                }
+                for volume in ebs_volumes
+            ]
+            
+            response = {
+                "Status": "SUCCESS",
+                "Data": {"BlockDeviceMappings": mappings},
+                "PhysicalResourceId": "EBSVolumeMappings",
+                "StackId": event["StackId"],
+                "RequestId": event["RequestId"],
+                "LogicalResourceId": event["LogicalResourceId"],
+            }
+            send_response(event, response)
+        
+        def send_response(event, response):
+            client = boto3.client("cloudformation")
+            try:
+                client.put_item(
+                    StackId=event["StackId"],
+                    RequestId=event["RequestId"],
+                    PhysicalResourceId=response["PhysicalResourceId"],
+                    LogicalResourceId=event["LogicalResourceId"],
+                    Status=response["Status"],
+                    Reason=response["Reason"] if "Reason" in response else "",
+                    Data=response["Data"] if "Data" in response else {},
+                )
+            except ClientError as error:
+                print("Error sending response to CloudFormation: " + str(error))
+
+Outputs:
+  EBSVolumeMappingsLambdaFunctionArn:
+    Description: ARN of the EBS volume mappings Lambda function
+    Value: !GetAtt EBSVolumeMappingsLambdaFunction.Arn
