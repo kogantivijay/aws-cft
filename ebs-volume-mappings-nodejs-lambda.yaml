@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda function for creating EBS volume mappings
+
+Resources:
+  EBSVolumeMappingsLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs14.x
+      InlineCode: |
+        const response = require('cfn-response');
+
+        exports.handler = async function(event, context) {
+          let ebsVolumes = [];
+          try {
+            ebsVolumes = JSON.parse(event.ResourceProperties.EBSVolumes);
+          } catch (error) {
+            console.error('Failed to parse EBSVolumes JSON string:', error);
+            await response.send(event, context, response.FAILED, {Error: 'Invalid EBSVolumes JSON string'});
+            return;
+          }
+
+          const mappings = ebsVolumes.map(volume => ({
+            DeviceName: volume.DeviceName,
+            Ebs: {
+              VolumeType: volume.VolumeType,
+              Iops: volume.Iops,
+              KmsKeyId: volume.KmsKeyId,
+              Throughput: volume.Throughput,
+              Encrypted: volume.Encrypted,
+              SnapshotId: volume.SnapshotId,
+            },
+          }));
+
+          await response.send(event, context, response.SUCCESS, {BlockDeviceMappings: mappings});
+        };
+
+Outputs:
+  EBSVolumeMappingsLambdaFunctionArn:
+    Description: ARN of the EBS volume mappings Lambda function
+    Value: !GetAtt EBSVolumeMappingsLambdaFunction.Arn
