@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Hello World Lambda - Service Catalog Product
+
+Resources:
+  HelloWorldLambdaProduct:
+    Type: 'AWS::ServiceCatalog::CloudFormationProduct'
+    Properties:
+      Name: HelloWorldLambdaProduct
+      Owner: YourName
+      Description: A simple Hello World Lambda function with a dependency, deployed using AWS Service Catalog.
+      ProvisioningArtifactParameters:
+        - Name: v1.0.0
+          Info:
+            LoadTemplateFromURL: "https://my-lambda-package-s3-bucket.s3.amazonaws.com/hello-world-lambda-template.yaml"
+
+Outputs:
+  HelloWorldLambdaProductId:
+    Description: The product ID of the HelloWorldLambda Product
+    Value: !Ref HelloWorldLambdaProduct
+    Export:
+      Name: HelloWorldLambdaProductId

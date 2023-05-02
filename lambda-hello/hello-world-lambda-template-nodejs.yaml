@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Hello World Lambda Function Template
+
+Resources:
+  HelloWorldLambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: HelloWorldLambdaFunctionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  HelloWorldLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: hello_world.handler
+      Runtime: nodejs14.x
+      Role: !GetAtt HelloWorldLambdaFunctionRole.Arn
+      Code:
+        S3Bucket: my-lambda-package-s3-bucket
+        S3Key: lambda-nodejs.zip
+Outputs:
+  HelloWorldLambdaFunctionArn:
+    Description: The ARN of the HelloWorldLambda function
+    Value: !GetAtt HelloWorldLambdaFunction.Arn
+    Export:
+      Name: HelloWorldLambdaFunctionArn

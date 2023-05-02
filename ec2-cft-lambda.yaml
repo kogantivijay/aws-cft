@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 Instance with Lambda Invocation and Tag
+
+Parameters:
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+
+  EBSVolumeMappingsLambdaFunctionArn:
+    Description: The ARN of the HelloWorldLambda function
+    Type: String
+
+  EBSVolumes:
+    Description: JSON string representing the list of EBS volumes to attach
+    Type: String
+    Default: "[]"
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0      
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: ami-04f1014c8adcfa670 # Amazon Linux 2 AMI (HVM), SSD Volume Type
+      BlockDeviceMappings: !GetAtt EBSVolumeMappings.Outputs.BlockDeviceMappings
+      KeyName: ec2-key-pair
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+  EBSVolumeMappings:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !Ref EBSVolumeMappingsLambdaFunctionArn
+      EBSVolumes: !Ref EBSVolumes
+
+Outputs:
+  InstanceId:
+    Description: The Instance ID
+    Value: !Ref EC2Instance

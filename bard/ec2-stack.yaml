@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  HelloWorldLambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: HelloWorldLambdaFunctionPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+  # Create a Lambda function
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt HelloWorldLambdaFunctionRole.Arn
+      Code:
+        ZipFile: |
+          import random
+
+          def lambda_handler(event, context):
+            # Generate a random number
+            random_number = random.randint(1, 100)
+
+            # Return the random number as the response
+            return random_number
+      Handler: index.lambda_handler
+      Runtime: python3.9
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0     
+  # Create a Custom Resource Function
+  CustomResourceFunction:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt LambdaFunction.Arn
+      ResourceProperties:
+        RandomNumber: !GetAtt LambdaFunction.Arn 
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-04f1014c8adcfa670 # Amazon Linux 2 AMI (HVM), SSD Volume Type
+      KeyName: ec2-key-pair
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      InstanceType: t2.micro
+      Tags:
+        - Key: RandomNumber
+          Value: !Ref CustomResourceFunction
+
+
+

@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Hello World Lambda Function Template
+
+Resources:
+  HelloWorldLambdaFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: HelloWorldLambda
+      Runtime: python3.10
+      Handler: package.hello_world.lambda_handler
+      CodeUri: s3://my-lambda-package-s3-bucket/HelloWorldLambda.zip
+      Description: A simple Hello World Lambda function with a dependency.
+      MemorySize: 128
+      Timeout: 10
+      Policies:
+        - AWSLambdaBasicExecutionRole
+
+Outputs:
+  HelloWorldLambdaFunctionArn:
+    Description: The ARN of the HelloWorldLambda function
+    Value: !GetAtt HelloWorldLambdaFunction.Arn
+    Export:
+      Name: HelloWorldLambdaFunctionArn

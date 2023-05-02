@@ -26,7 +26,7 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       ImageId: !Select [0, !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]]
-      BlockDeviceMappings: !If [HasEBSVolumes, !Ref EBSVolumeMappings, !Ref 'AWS::NoValue']
+      BlockDeviceMappings: !If [HasEBSVolumes, !Ref EBSVolumeMappings, [!Ref 'AWS::NoValue']]
 
   EBSVolumeMappings:
     Type: Custom::EBSVolumeMappings
