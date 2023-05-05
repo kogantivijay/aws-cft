@@ -4,7 +4,7 @@ Description: EC2 instance with dynamic EBS volumes using EBSVolumeMacro
 Parameters:
   VolumesJson:
     Type: String
-    Default: '[{"Size": 20, "VolumeType": "gp3", "Iops": 3000, "Device": "/dev/xvdb", "KmsKeyId": ""},{"Size": 30, "VolumeType": "gp2", "Iops": 100, "Device": "/dev/xvdc", "KmsKeyId": ""}]'
+    Default: '[{"Size": 20, "VolumeType": "gp3", "Iops": 3000, "Device": "/dev/xvdf"},{"Size": 30, "VolumeType": "gp2", "Iops": 100, "Device": "/dev/xvdg"}]'
 
 Resources:
   InstanceSecurityGroup:

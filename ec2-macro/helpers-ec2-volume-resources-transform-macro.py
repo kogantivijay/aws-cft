@@ -1,9 +1,17 @@
 import json
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def handler(event, context):
-    fragment = event["Fragment"]
-    volumes_json = event["TransformParameterValues"]["VolumesJson"]
+    logger.info(f"Received event: {event}")
+
+    fragment = event["fragment"]
+    volumes_json = event["params"]["VolumesJson"]
     volumes = json.loads(volumes_json)
+    fragment["Resources"] = {}  # Add this line to initialize the Resources
+    
 
     for index, volume in enumerate(volumes):
         volume_resource = f"Volume{index}"
@@ -12,11 +20,10 @@ def handler(event, context):
         fragment["Resources"][volume_resource] = {
             "Type": "AWS::EC2::Volume",
             "Properties": {
-                "AvailabilityZone": {"Fn::Select": [0, {"Fn::GetAZs": ""}]},
+                "AvailabilityZone": {"Fn::GetAtt": ["Instance", "AvailabilityZone"]},
                 "Size": volume["Size"],
                 "VolumeType": volume["VolumeType"],
                 "Iops": volume["Iops"],
-                "KmsKeyId": volume["KmsKeyId"],
             },
         }
 
@@ -29,7 +36,11 @@ def handler(event, context):
             },
         }
 
-    return {
+    response = {
         "Status": "SUCCESS",
         "Fragment": fragment,
     }
+
+    logger.info(f"Response: {response}")
+
+    return response
