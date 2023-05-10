@@ -15,7 +15,9 @@ def handler(event, context):
 
         resources = fragment['Resources']
 
-        for idx, volume in enumerate(volumes_data):
+        block_device_mappings = []
+
+        for idx, volume in enumerate(volumes_data, start=1):
             volume_resource_name = f"Volume{idx}"
             attachment_resource_name = f"VolumeAttachment{idx}"
 
@@ -29,16 +31,28 @@ def handler(event, context):
                 }
             }
 
-            resources[attachment_resource_name] = {
-                "Type": "AWS::EC2::VolumeAttachment",
-                "Properties": {
-                    "Device": volume["Device"],
-                    "InstanceId": ec2_instance_id,
-                    "VolumeId": {"Ref": volume_resource_name}
+            if volume.get("RootVolume", False):
+                block_device_mappings.append({
+                    "DeviceName": volume["Device"],
+                    "Ebs": {
+                        "VolumeSize": volume["Size"],
+                        "VolumeType": volume["VolumeType"],
+                        "Iops": volume["Iops"],
+                    }
+                })
+            else:
+                resources[attachment_resource_name] = {
+                    "Type": "AWS::EC2::VolumeAttachment",
+                    "Properties": {
+                        "Device": volume["Device"],
+                        "InstanceId": ec2_instance_id,
+                        "VolumeId": {"Ref": volume_resource_name}
+                    }
                 }
-            }
+                logger.info(f"Added volume {volume_resource_name} and attachment {attachment_resource_name}")
 
-            logger.info(f"Added volume {volume_resource_name} and attachment {attachment_resource_name}")
+        if block_device_mappings:
+            resources["Instance"]["Properties"]["BlockDeviceMappings"] = block_device_mappings
 
         response = {
             'requestId': event['requestId'],
