@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Stack to deploy the EBS Volume Macro
+Resources:
+  EC2HelperTranformMacrosLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: ec2-helper-transform-macro.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.10
+      CodeUri: s3://my-lambda-package-s3-bucket/ec2-helper-transform-macro.zip
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaExecutionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+  RegisterEBSVolumeMacro:
+    Type: AWS::CloudFormation::Macro
+    Properties:
+      Name: EC2HelperTranformMacros
+      FunctionName: !Ref EC2HelperTranformMacrosLambda

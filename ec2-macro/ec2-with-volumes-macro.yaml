@@ -24,14 +24,8 @@ Resources:
       ImageId: ami-04f1014c8adcfa670 # Amazon Linux 2 AMI (HVM), SSD Volume Type
       KeyName: ec2-key-pair
 
-  EBSVolumesAndAttachments:
-    Type: AWS::CloudFormation::CustomResource
-    Properties:
-      TemplateParameterValues:
-        VolumesJson: !Ref VolumesJson
-      ServiceToken: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:EBSVolumeMacro"
-      Volumes:
-        Fn::Transform:
-          Name: EBSVolumeMacro
-          Parameters:
-            VolumesJson: !Ref VolumesJson
+
+  'Fn::Transform':
+    Name: EC2VolumeAndAttachment
+    Parameters:
+      VolumeData: !Ref VolumesJson

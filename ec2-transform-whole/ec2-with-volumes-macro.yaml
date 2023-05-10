@@ -4,7 +4,7 @@ Description: EC2 instance with dynamic EBS volumes using EBSVolumeMacro
 Parameters:
   VolumesJson:
     Type: String
-    Default: '[{"Size": 20, "VolumeType": "gp3", "Iops": 3000, "Device": "/dev/xvdf"},{"Size": 30, "VolumeType": "gp2", "Iops": 100, "Device": "/dev/xvdg"}]'
+    Default: '[{"Size": 22, "VolumeType": "gp3", "Iops": 100, "Device": "/dev/xvda"},{"Size": 20, "VolumeType": "gp3", "Iops": 102, "Device": "/dev/xvdf"},{"Size": 30, "VolumeType": "gp3", "Iops": 100, "Device": "/dev/xvdg"}]'
 
 Resources:
   InstanceSecurityGroup:
@@ -23,6 +23,6 @@ Resources:
       InstanceType: t2.micro
       ImageId: ami-04f1014c8adcfa670 # Amazon Linux 2 AMI (HVM), SSD Volume Type
       KeyName: ec2-key-pair
-      
+
 Transform:
-  - EC2VolumeAndAttachment
+  - EC2HelperTranformMacros
