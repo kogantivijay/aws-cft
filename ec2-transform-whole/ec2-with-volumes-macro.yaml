@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EC2 instance with dynamic EBS volumes using EBSVolumeMacro
+
+Parameters:
+  VolumesJson:
+    Type: String
+    Default: '[{"Size": 20, "VolumeType": "gp3", "Iops": 3000, "Device": "/dev/xvdf"},{"Size": 30, "VolumeType": "gp2", "Iops": 100, "Device": "/dev/xvdg"}]'
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0   
+          
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-04f1014c8adcfa670 # Amazon Linux 2 AMI (HVM), SSD Volume Type
+      KeyName: ec2-key-pair
+      
+Transform:
+  - EC2VolumeAndAttachment
