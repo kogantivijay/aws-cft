@@ -8,7 +8,7 @@ Resources:
       Handler: ec2-helper-transform-macro.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.10
-      CodeUri: s3://my-lambda-package-s3-bucket/ec2-helper-transform-macro.zip
+      CodeUri: s3://vijay-learn-service-catalog-101/ec2-helper-transform-macro.zip
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:

@@ -1,0 +1,96 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "EC2 instance with dynamic EBS volumes using EBSVolumeMacro",
+  "Parameters": {
+    "VolumesJson": {
+      "Type": "String",
+      "Default": "[{\"Size\": 22, \"VolumeType\": \"gp3\", \"Iops\": 100, \"Device\": \"/dev/xvda\", \"RootVolume\": true},{\"Size\": 20, \"VolumeType\": \"gp3\", \"Iops\": 102, \"Device\": \"/dev/xvdf\"},{\"Size\": 30, \"VolumeType\": \"gp3\", \"Iops\": 100, \"Device\": \"/dev/xvdg\"}]"
+    }
+  },
+  "Resources": {
+    "InstanceSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH access via port 22",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": "t2.micro",
+        "ImageId": "ami-04f1014c8adcfa670",
+        "KeyName": "ec2-key-pair",
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": 30,
+              "VolumeType": "gp3",
+              "Iops": 3000
+            }
+          }
+        ]
+      }
+    },
+    "Volume2": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 30,
+        "AvailabilityZone": {
+          "Fn::GetAtt": [
+            "Instance",
+            "AvailabilityZone"
+          ]
+        },
+        "VolumeType": "gp3",
+        "Iops": 3000
+      }
+    },
+    "VolumeAttachment2": {
+      "Type": "AWS::EC2::VolumeAttachment",
+      "Properties": {
+        "Device": "/dev/xvdf",
+        "InstanceId": {
+          "Ref": "Instance"
+        },
+        "VolumeId": {
+          "Ref": "Volume2"
+        }
+      }
+    },
+    "Volume3": {
+      "Type": "AWS::EC2::Volume",
+      "Properties": {
+        "Size": 30,
+        "AvailabilityZone": {
+          "Fn::GetAtt": [
+            "Instance",
+            "AvailabilityZone"
+          ]
+        },
+        "VolumeType": "gp3",
+        "Iops": 3001
+      }
+    },
+    "VolumeAttachment3": {
+      "Type": "AWS::EC2::VolumeAttachment",
+      "Properties": {
+        "Device": "/dev/xvdg",
+        "InstanceId": {
+          "Ref": "Instance"
+        },
+        "VolumeId": {
+          "Ref": "Volume3"
+        }
+      }
+    }
+  }
+}

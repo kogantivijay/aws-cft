@@ -16,31 +16,32 @@ def handler(event, context):
         resources = fragment['Resources']
 
         block_device_mappings = []
+        for idx, volume in enumerate(volumes_data):
+            is_root_volume = volume.get("RootVolume", False)
 
-        for idx, volume in enumerate(volumes_data, start=1):
-            volume_resource_name = f"Volume{idx}"
-            attachment_resource_name = f"VolumeAttachment{idx}"
-
-            resources[volume_resource_name] = {
-                "Type": "AWS::EC2::Volume",
-                "Properties": {
-                    "Size": volume["Size"],
-                    "AvailabilityZone": ec2_instance_az,
-                    "VolumeType": volume["VolumeType"],
-                    "Iops": volume["Iops"],
-                }
-            }
-
-            if volume.get("RootVolume", False):
+            if is_root_volume:
                 block_device_mappings.append({
                     "DeviceName": volume["Device"],
                     "Ebs": {
                         "VolumeSize": volume["Size"],
                         "VolumeType": volume["VolumeType"],
-                        "Iops": volume["Iops"],
+                        "Iops": volume["Iops"]
                     }
                 })
             else:
+                volume_resource_name = f"Volume{idx}"
+                attachment_resource_name = f"VolumeAttachment{idx}"
+
+                resources[volume_resource_name] = {
+                    "Type": "AWS::EC2::Volume",
+                    "Properties": {
+                        "Size": volume["Size"],
+                        "AvailabilityZone": ec2_instance_az,
+                        "VolumeType": volume["VolumeType"],
+                        "Iops": volume["Iops"],
+                    }
+                }
+
                 resources[attachment_resource_name] = {
                     "Type": "AWS::EC2::VolumeAttachment",
                     "Properties": {
@@ -49,6 +50,7 @@ def handler(event, context):
                         "VolumeId": {"Ref": volume_resource_name}
                     }
                 }
+
                 logger.info(f"Added volume {volume_resource_name} and attachment {attachment_resource_name}")
 
         if block_device_mappings:
