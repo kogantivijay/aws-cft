@@ -60,3 +60,22 @@ Cons:
 Limited to transforming the template at the macro level, i.e. modifying the template itself and not creating/updating/deleting resources.
 Limited to 1MB input/output data size.
 Cannot use AWS SDKs or third-party libraries in the macro code.
+
+# Bootstrap Pipeline
+├── ProductA
+│   ├── Dev
+│   │   └── *config.yaml  
+│   ├── UAT
+│   │   └── *config.yaml  
+│   └── Prod
+│       └── *config.yaml  
+├── ProductB
+│   |--─ Dev
+│   │   └── *config.yaml  
+│   |── UAT
+│   │   └── *config.yaml  
+|   |			
+│   └── Prod
+│       └── *config.yaml  
+|			
+└── ...

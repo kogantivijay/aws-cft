@@ -6,6 +6,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: ec2-helper-transform-macro.handler
+      FunctionName: EC2HelperTranformMacrosLambda
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.10
       CodeUri: s3://vijay-learn-service-catalog-101/ec2-helper-transform-macro.zip
