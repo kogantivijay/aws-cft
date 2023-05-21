@@ -29,37 +29,6 @@ pipeline {
             }
         }
 
-def promptForCRNumber(validCRNumberRegex) {
-    def userInput = input message: 'CR number for Prod deployment is invalid or default. Please provide a valid CR number:',
-        id: 'crNumberInput',
-        ok: 'Proceed',
-        parameters: [
-            string(
-                defaultValue: '', 
-                description: 'CR Number for Prod Deployment', 
-                name: 'CR_Number', 
-                trim: true
-            )
-        ]
-
-    while (!userInput.CR_Number.matches(validCRNumberRegex)) {
-        userInput = input message: 'CR number for Prod deployment is invalid. Please provide a valid CR number:',
-            id: 'crNumberInput',
-            ok: 'Proceed',
-            parameters: [
-                string(
-                    defaultValue: '', 
-                    description: 'CR Number for Prod Deployment', 
-                    name: 'CR_Number', 
-                    trim: true
-                )
-            ]
-    }
-    return userInput.CR_Number
-}
-
-        
-
 
         stage('SCM Checkout') {
             steps {
@@ -98,4 +67,32 @@ def promptForCRNumber(validCRNumberRegex) {
             cleanWs()
         }
     }
+}
+def promptForCRNumber(validCRNumberRegex) {
+    def crNumber = input message: 'CR number for Prod deployment is invalid or default. Please provide a valid CR number:',
+        id: 'crNumberInput',
+        ok: 'Proceed',
+        parameters: [
+            string(
+                defaultValue: '', 
+                description: 'CR Number for Prod Deployment', 
+                name: 'CR_Number', 
+                trim: true
+            )
+        ]
+
+    while (!crNumber.matches(validCRNumberRegex)) {
+        userInput = input message: 'CR number for Prod deployment is invalid. Please provide a valid CR number:',
+            id: 'crNumberInput',
+            ok: 'Proceed',
+            parameters: [
+                string(
+                    defaultValue: '', 
+                    description: 'CR Number for Prod Deployment', 
+                    name: 'CR_Number', 
+                    trim: true
+                )
+            ]
+    }
+    return userInput
 }
