@@ -1,0 +1,29 @@
+Parameters:
+  AdditionalSecurityGroupsParameterKeys:
+    Description: List of SSM parameter keys for additional security group IDs
+    Type: List<AWS::SSM::Parameter::Value<String>>
+
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      ImageId: 
+        'Fn::Sub': 
+          - '{{resolve:ssm:${AMI}:1}}'
+          - AMI: !FindInMap [AMI, !Ref OSPlatformParameter, ID]
+      SubnetId: !Sub '{{resolve:ssm:${SubnetParameter}:1}}'
+      SecurityGroupIds:
+        Fn::If:
+          - AdditionalSecurityGroupsNotEmpty
+          - !Join
+            - ','
+            - - '{{resolve:ssm:/path/to/core/security/group/1}}'  # Core Security Group 1
+              - '{{resolve:ssm:/path/to/core/security/group/2}}'  # Core Security Group 2
+              - !Split
+                  - ','
+                  - !Sub '{{resolve:ssm:${AdditionalSecurityGroupsParameterKeys}}}'
+          - !Join
+            - ','
+            - - '{{resolve:ssm:/path/to/core/security/group/1}}'  # Core Security Group 1
+              - '{{resolve:ssm:/path/to/core/security/group/2}}'  # Core Security Group 2
