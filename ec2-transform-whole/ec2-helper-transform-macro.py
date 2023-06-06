@@ -15,6 +15,7 @@ def handler(event, context):
 
         fragment = event['fragment']
         volumes_data = json.loads(event['templateParameterValues']['VolumesJson'])
+        ds_dev_tools_application = event['templateParameterValues']['DSDevToolsApplication']
         ec2_instance_id = {"Ref": "EC2Instance"}
         ec2_instance_az = {"Fn::GetAtt": ["EC2Instance", "AvailabilityZone"]}
 
@@ -25,12 +26,20 @@ def handler(event, context):
         for idx, volume in enumerate(volumes_data):
             is_root_volume = volume.get("RootVolume", False)
             ebs_data = {
-                "VolumeSize": volume.get("Size", None),
                 "VolumeType": volume.get("VolumeType", None),
                 "Iops": volume.get("Iops", None),
                 "KmsKeyId": KMS_KEY_ARN,
-                "Encrypted": True
+                "Encrypted": True,
+                "Tags": volume.get("Tags", [])  # handle the tags
             }
+
+            # Add DSDevToolsApplication as a tag
+            ebs_data["Tags"].append({"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application})
+
+            if "SnapshotId" in volume:
+                ebs_data["SnapshotId"] = volume.get("SnapshotId")
+            else:
+                ebs_data["VolumeSize"] = volume.get("Size", None)
 
             if is_root_volume:
                 if block_device_mappings:
