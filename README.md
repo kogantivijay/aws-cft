@@ -92,3 +92,22 @@ Ec2 Instance Types
       'm6i.large', 'm6i.xlarge', 'm6i.2xlarge', 'm6i.4xlarge', 'm6i.8xlarge', 'm6i.12xlarge', 'm6i.16xlarge', 'm6i.24xlarge', 
       'm6n.large', 'm6n.xlarge', 'm6n.2xlarge', 'm6n.4xlarge', 'm6n.8xlarge', 'm6n.12xlarge', 'm6n.16xlarge', 'm6n.24xlarge'
     ]
+
+
+    How to test the lambda
+    {
+  "fragment": {
+    "Resources": {
+      "EC2Instance": {
+        "Properties": {
+          "BlockDeviceMappings": []
+        }
+      }
+    }
+  },
+  "templateParameterValues": {
+    "VolumesJson": "[{\"RootVolume\": true, \"VolumeType\": \"gp2\", \"Size\": 50, \"Device\": \"/dev/xvda\"}]",
+    "DSDevToolsApplication": "TestApp"
+  },
+  "requestId": "123456"
+}
