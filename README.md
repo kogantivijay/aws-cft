@@ -95,7 +95,7 @@ Ec2 Instance Types
 
 
     How to test the lambda
-    {
+   {
   "fragment": {
     "Resources": {
       "EC2Instance": {

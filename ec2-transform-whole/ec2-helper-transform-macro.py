@@ -11,6 +11,7 @@ KMS_KEY_ARN = parameter['Parameter']['Value']
 
 def handler(event, context):
     try:
+        logger.info('Start processing event')
         logger.info(f"Event: {event}")
 
         fragment = event['fragment']
@@ -19,22 +20,22 @@ def handler(event, context):
         ec2_instance_id = {"Ref": "EC2Instance"}
         ec2_instance_az = {"Fn::GetAtt": ["EC2Instance", "AvailabilityZone"]}
 
+        logger.info('Parsed templateParameterValues')
+
         resources = fragment['Resources']
+        logger.info(f"Resources before processing: {resources}")
 
         block_device_mappings = resources["EC2Instance"]["Properties"].get("BlockDeviceMappings", [])
 
         for idx, volume in enumerate(volumes_data):
+            logger.info(f"Processing volume {idx}: {volume}")
             is_root_volume = volume.get("RootVolume", False)
             ebs_data = {
                 "VolumeType": volume.get("VolumeType", None),
                 "Iops": volume.get("Iops", None),
                 "KmsKeyId": KMS_KEY_ARN,
-                "Encrypted": True,
-                "Tags": volume.get("Tags", [])  # handle the tags
+                "Encrypted": True
             }
-
-            # Add DSDevToolsApplication as a tag
-            ebs_data["Tags"].append({"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application})
 
             if "SnapshotId" in volume:
                 ebs_data["SnapshotId"] = volume.get("SnapshotId")
@@ -46,8 +47,12 @@ def handler(event, context):
                     block_device_mappings[0]["Ebs"].update(
                         {k: v for k, v in ebs_data.items() if v is not None}
                     )
+                logger.info(f"Updated BlockDeviceMappings for root volume: {block_device_mappings}")
             else:
                 ebs_data["Throughput"] = volume.get("Throughput", None) if volume.get("VolumeType", "") == "gp3" else None
+                ebs_data["Tags"] = volume.get("Tags", [])  # handle the tags
+                # Add DSDevToolsApplication as a tag for non-root volumes
+                ebs_data["Tags"].append({"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application})
 
                 volume_resource_name = f"Volume{idx}"
                 attachment_resource_name = f"VolumeAttachment{idx}"
