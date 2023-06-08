@@ -24,8 +24,9 @@ def validate_volumes_data(volumes_data):
             if key not in volume:
                 raise ValueError(f"Volume {idx} is missing required key '{key}'")
         case_sensitive_keys = ["RootVolume", "VolumeType", "Device"]
-        # TODO: Write logic to do case ensitive check for keys 
-        
+        # TODO: Write logic to do case sensitive check for keys 
+
+
 def add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_id):
     block_device_mappings = resources["EC2Instance"]["Properties"].get("BlockDeviceMappings", [])
     
@@ -85,7 +86,7 @@ def add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_
                     "VolumeId": {"Ref": volume_resource_name}
                 }
             }
-            
+
 
 def add_instance_tags(resources, instance_tags, ds_dev_tools_application):
     default_tags = [{"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application}]
@@ -98,6 +99,16 @@ def add_instance_tags(resources, instance_tags, ds_dev_tools_application):
     instance_resource["Properties"] = instance_properties
     resources[instance_resource_name] = instance_resource
 
+
+def add_security_group_ids(resources, security_group_ids):
+    instance_resource_name = "EC2Instance"
+    instance_resource = resources.get(instance_resource_name, {})
+    instance_properties = instance_resource.get("Properties", {})
+    instance_properties["SecurityGroupIds"] = security_group_ids
+    instance_resource["Properties"] = instance_properties
+    resources[instance_resource_name] = instance_resource
+
+
 def handler(event, context):
     try:
         logger.info('Start processing event')
@@ -106,10 +117,12 @@ def handler(event, context):
         fragment = event['fragment']
         volumes_data = json.loads(event['templateParameterValues']['VolumesJson'])
         instance_tags_json = event['templateParameterValues'].get('InstanceTagsJson', '[]')
-        
+        security_group_ids_json = event['templateParameterValues'].get('SecurityGroupIDSSMJson', '[]')
+
         logger.info(f"Parsed VolumesJson: {json.dumps(volumes_data, indent=2)}")
         logger.info(f"Parsed InstanceTagsJson: {instance_tags_json}")
-        
+        logger.info(f"Parsed SecurityGroupIDSSMJson: {security_group_ids_json}")
+
         ds_dev_tools_application = event['templateParameterValues']['DSDevToolsApplication']
         logger.info(f"DSDevToolsApplication: {ds_dev_tools_application}")
 
@@ -129,6 +142,9 @@ def handler(event, context):
 
         instance_tags = json.loads(instance_tags_json)
         add_instance_tags(resources, instance_tags, ds_dev_tools_application)
+
+        security_group_ids = json.loads(security_group_ids_json)
+        add_security_group_ids(resources, security_group_ids, ec2_instance_id)
 
         logger.info(f"Final resources: {json.dumps(resources, indent=2)}")
         fragment['Resources'] = resources
