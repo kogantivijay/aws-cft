@@ -15,6 +15,89 @@ DEFAULT_SIZE_NON_ROOT = 40  # Assign your default size for non-root volume
 DEFAULT_THROUGHPUT = 125  # Assign your default throughput
 DEFAULT_VOLUME_TYPE = "gp3"  # Assign your default volume type
 
+
+def validate_volumes_data(volumes_data):
+    for idx, volume in enumerate(volumes_data):
+        required_keys = ["VolumeType", "Size", "Device", "Iops"]
+        
+        for key in required_keys:
+            if key not in volume:
+                raise ValueError(f"Volume {idx} is missing required key '{key}'")
+        case_sensitive_keys = ["RootVolume", "VolumeType", "Device"]
+        # TODO: Write logic to do case ensitive check for keys 
+        
+def add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_id):
+    block_device_mappings = resources["EC2Instance"]["Properties"].get("BlockDeviceMappings", [])
+    
+    for idx, volume in enumerate(volumes_data):
+        logger.info(f"Processing volume {idx}: {volume}")
+        is_root_volume = volume.get("RootVolume", False)
+        volume_type = volume.get("VolumeType", DEFAULT_VOLUME_TYPE)
+
+        ebs_data = {
+            "VolumeType": volume_type,
+            "KmsKeyId": KMS_KEY_ARN,
+            "Encrypted": True
+        }
+
+        if "SnapshotId" in volume:
+            ebs_data["SnapshotId"] = volume.get("SnapshotId")
+        else:
+            if is_root_volume:
+                ebs_data["VolumeSize"] = volume.get("Size", DEFAULT_SIZE_ROOT)
+            else:
+                ebs_data["Size"] = volume.get("Size", DEFAULT_SIZE_NON_ROOT)
+
+        if volume_type in ["gp3", "io1", "io2"]:
+            ebs_data["Iops"] = volume.get("Iops", DEFAULT_IOPS)
+
+        logger.info(f"Processed volume {idx}: {json.dumps(ebs_data, indent=2)}")
+
+        if is_root_volume:
+            if block_device_mappings:
+                block_device_mappings[0]["Ebs"].update(
+                    {k: v for k, v in ebs_data.items() if v is not None}
+                )
+            logger.info(f"Updated BlockDeviceMappings for root volume: {block_device_mappings}")
+        else:
+            if volume_type == "gp3":
+                ebs_data["Throughput"] = volume.get("Throughput", DEFAULT_THROUGHPUT)
+
+            ebs_data["Tags"] = volume.get("Tags", [])  # handle the tags
+            # Add DSDevToolsApplication as a tag for non-root volumes
+            ebs_data["Tags"].append({"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application})
+
+            volume_resource_name = f"Volume{idx}"
+            attachment_resource_name = f"VolumeAttachment{idx}"
+
+            resources[volume_resource_name] = {
+                "Type": "AWS::EC2::Volume",
+                "DeletionPolicy": "Retain",
+                "UpdateReplacePolicy": "Retain",
+                "Properties": ebs_data
+            }
+
+            resources[attachment_resource_name] = {
+                "Type": "AWS::EC2::VolumeAttachment",
+                "Properties": {
+                    "Device": volume["Device"],
+                    "InstanceId": ec2_instance_id,
+                    "VolumeId": {"Ref": volume_resource_name}
+                }
+            }
+            
+
+def add_instance_tags(resources, instance_tags, ds_dev_tools_application):
+    default_tags = [{"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application}]
+    instance_resource_name = "EC2Instance"
+    instance_resource = resources.get(instance_resource_name, {})
+    instance_properties = instance_resource.get("Properties", {})
+    existing_tags = instance_properties.get("Tags", [])
+    updated_tags = existing_tags + default_tags + instance_tags
+    instance_properties["Tags"] = updated_tags
+    instance_resource["Properties"] = instance_properties
+    resources[instance_resource_name] = instance_resource
+
 def handler(event, context):
     try:
         logger.info('Start processing event')
@@ -22,8 +105,11 @@ def handler(event, context):
 
         fragment = event['fragment']
         volumes_data = json.loads(event['templateParameterValues']['VolumesJson'])
+        instance_tags_json = event['templateParameterValues'].get('InstanceTagsJson', '[]')
+        
         logger.info(f"Parsed VolumesJson: {json.dumps(volumes_data, indent=2)}")
-
+        logger.info(f"Parsed InstanceTagsJson: {instance_tags_json}")
+        
         ds_dev_tools_application = event['templateParameterValues']['DSDevToolsApplication']
         logger.info(f"DSDevToolsApplication: {ds_dev_tools_application}")
 
@@ -38,64 +124,11 @@ def handler(event, context):
         block_device_mappings = resources["EC2Instance"]["Properties"].get("BlockDeviceMappings", [])
         logger.info(f"Initial BlockDeviceMappings: {json.dumps(block_device_mappings, indent=2)}")
 
-        for idx, volume in enumerate(volumes_data):
-            logger.info(f"Processing volume {idx}: {volume}")
-            is_root_volume = volume.get("RootVolume", False)
-            volume_type = volume.get("VolumeType", DEFAULT_VOLUME_TYPE)
+        validate_volumes_data(volumes_data)
+        add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_id)
 
-            ebs_data = {
-                "VolumeType": volume_type,
-                "KmsKeyId": KMS_KEY_ARN,
-                "Encrypted": True
-            }
-
-            if "SnapshotId" in volume:
-                ebs_data["SnapshotId"] = volume.get("SnapshotId")
-            else:
-                if is_root_volume:
-                    ebs_data["VolumeSize"] = volume.get("Size", DEFAULT_SIZE_ROOT)
-                else:
-                    ebs_data["Size"] = volume.get("Size", DEFAULT_SIZE_NON_ROOT)
-
-            if volume_type in ["gp3", "io1", "io2"]:
-                ebs_data["Iops"] = volume.get("Iops", DEFAULT_IOPS)
-
-            logger.info(f"Processed volume {idx}: {json.dumps(ebs_data, indent=2)}")
-
-            if is_root_volume:
-                if block_device_mappings:
-                    block_device_mappings[0]["Ebs"].update(
-                        {k: v for k, v in ebs_data.items() if v is not None}
-                    )
-                logger.info(f"Updated BlockDeviceMappings for root volume: {block_device_mappings}")
-            else:
-                if volume_type == "gp3":
-                    ebs_data["Throughput"] = volume.get("Throughput", DEFAULT_THROUGHPUT)
-
-                ebs_data["Tags"] = volume.get("Tags", [])  # handle the tags
-                # Add DSDevToolsApplication as a tag for non-root volumes
-                ebs_data["Tags"].append({"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application})
-
-                volume_resource_name = f"Volume{idx}"
-                attachment_resource_name = f"VolumeAttachment{idx}"
-
-                resources[volume_resource_name] = {
-                    "Type": "AWS::EC2::Volume",
-                    "DeletionPolicy": "Retain",
-                    "UpdateReplacePolicy": "Retain",
-                    "Properties": ebs_data
-                }
-
-                resources[attachment_resource_name] = {
-                    "Type": "AWS::EC2::VolumeAttachment",
-                    "Properties": {
-                        "Device": volume["Device"],
-                        "InstanceId": ec2_instance_id,
-                        "VolumeId": {"Ref": volume_resource_name}
-                    }
-                }
-
-                logger.info(f"Added volume {volume_resource_name} and attachment {attachment_resource_name}")
+        instance_tags = json.loads(instance_tags_json)
+        add_instance_tags(resources, instance_tags, ds_dev_tools_application)
 
         logger.info(f"Final resources: {json.dumps(resources, indent=2)}")
         fragment['Resources'] = resources
@@ -106,7 +139,6 @@ def handler(event, context):
             'status': 'success',
             'fragment': fragment
         }
-
     except Exception as e:
         logger.error(f"Error processing event: {e}")
         response = {
