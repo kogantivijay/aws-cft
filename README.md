@@ -106,7 +106,7 @@ Ec2 Instance Types
     }
   },
   "templateParameterValues": {
-    "VolumesJson": "[{\"RootVolume\": true, \"VolumeType\": \"gp2\", \"Size\": 50, \"Device\": \"/dev/xvda\"}]",
+    "VolumesJson": "[{\"RootVolume\": true, \"VolumeType\": \"gp2\", \"Size\": 50, \"Device\": \"/dev/xvda\"}], { \"VolumeType\": \"gp2\", \"Size\": 50, \"Device\": \"/dev/xvdf\"}",
     "DSDevToolsApplication": "TestApp"
   },
   "requestId": "123456"
