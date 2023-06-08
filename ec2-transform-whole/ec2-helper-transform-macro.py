@@ -41,14 +41,13 @@ def handler(event, context):
         for idx, volume in enumerate(volumes_data):
             logger.info(f"Processing volume {idx}: {volume}")
             is_root_volume = volume.get("RootVolume", False)
+            volume_type = volume.get("VolumeType", DEFAULT_VOLUME_TYPE)
+
             ebs_data = {
-                "VolumeType": volume.get("VolumeType", DEFAULT_VOLUME_TYPE),
-                "Iops": volume.get("Iops", DEFAULT_IOPS),
+                "VolumeType": volume_type,
                 "KmsKeyId": KMS_KEY_ARN,
                 "Encrypted": True
             }
-
-            logger.info(f"Processing volume {idx}: {json.dumps(ebs_data, indent=2)}")
 
             if "SnapshotId" in volume:
                 ebs_data["SnapshotId"] = volume.get("SnapshotId")
@@ -58,6 +57,11 @@ def handler(event, context):
                 else:
                     ebs_data["Size"] = volume.get("Size", DEFAULT_SIZE_NON_ROOT)
 
+            if volume_type in ["gp3", "io1", "io2"]:
+                ebs_data["Iops"] = volume.get("Iops", DEFAULT_IOPS)
+
+            logger.info(f"Processed volume {idx}: {json.dumps(ebs_data, indent=2)}")
+
             if is_root_volume:
                 if block_device_mappings:
                     block_device_mappings[0]["Ebs"].update(
@@ -65,7 +69,9 @@ def handler(event, context):
                     )
                 logger.info(f"Updated BlockDeviceMappings for root volume: {block_device_mappings}")
             else:
-                ebs_data["Throughput"] = volume.get("Throughput", DEFAULT_THROUGHPUT) if volume.get("VolumeType", "") == "gp3" else None
+                if volume_type == "gp3":
+                    ebs_data["Throughput"] = volume.get("Throughput", DEFAULT_THROUGHPUT)
+
                 ebs_data["Tags"] = volume.get("Tags", [])  # handle the tags
                 # Add DSDevToolsApplication as a tag for non-root volumes
                 ebs_data["Tags"].append({"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application})
