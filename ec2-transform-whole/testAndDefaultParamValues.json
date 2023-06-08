@@ -1,0 +1,35 @@
+[
+    {
+        "Device": "/dev/sdh",
+        "Size": 100,
+        "VolumeType": "gp2",
+        "Iops": 3000,
+        "RootVolume": true,
+        "Tags": [
+            {"Key": "Name", "Value": "RootVolume"},
+            {"Key": "Environment", "Value": "Production"}
+        ]
+    },
+    {
+        "Device": "/dev/sdi",
+        "SnapshotId": "snap-0abcd1234efgh5678",
+        "VolumeType": "io1",
+        "Iops": 1000,
+        "Throughput": 4000,
+        "RootVolume": false,
+        "Tags": [
+            {"Key": "Name", "Value": "DataVolume"},
+            {"Key": "Environment", "Value": "Production"}
+        ]
+    },
+    {
+        "Device": "/dev/sdj",
+        "Size": 50,
+        "VolumeType": "gp3",
+        "Iops": 3000,
+        "Throughput": 125,
+        "RootVolume": false
+    }
+]
+
+Default: '[{"Size": 22, "VolumeType": "gp3", "Iops": 100, "Device": "/dev/xvda", "RootVolume": true},{"Size": 20, "VolumeType": "gp3", "Iops": 102, "Device": "/dev/xvdf"},{"Size": 30, "VolumeType": "gp3", "Iops": 100, "Device": "/dev/xvdg"}]'

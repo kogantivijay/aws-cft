@@ -94,17 +94,34 @@ def add_instance_tags(resources, instance_tags, ds_dev_tools_application):
     instance_resource = resources.get(instance_resource_name, {})
     instance_properties = instance_resource.get("Properties", {})
     existing_tags = instance_properties.get("Tags", [])
-    updated_tags = existing_tags + default_tags + instance_tags
+    updated_tags = existing_tags + default_tags
+    for key, value in instance_tags.items():
+        updated_tags.append({"Key": key, "Value": value})
     instance_properties["Tags"] = updated_tags
     instance_resource["Properties"] = instance_properties
     resources[instance_resource_name] = instance_resource
 
 
-def add_security_group_ids(resources, security_group_ids):
+def add_security_groups(resources, security_group_ids):
     instance_resource_name = "EC2Instance"
     instance_resource = resources.get(instance_resource_name, {})
     instance_properties = instance_resource.get("Properties", {})
-    instance_properties["SecurityGroupIds"] = security_group_ids
+    instance_properties["SecurityGroupIds"] = []
+
+    # Retrieve the default security group ID from SSM
+    default_sg_ssm_key = "/app/dsdevops/common/default-security-group-id"  # Replace with the actual SSM parameter key
+    response = ssm.get_parameter(Name=default_sg_ssm_key)
+    default_sg_id = response['Parameter']['Value']
+
+    # Add the default security group ID only if it's not already present in the list
+    if default_sg_id not in security_group_ids:
+        instance_properties["SecurityGroupIds"].append(default_sg_id)
+
+    for ssm_key in security_group_ids:
+        response = ssm.get_parameter(Name=ssm_key)
+        sg_id = response['Parameter']['Value']
+        instance_properties["SecurityGroupIds"].append(sg_id)
+
     instance_resource["Properties"] = instance_properties
     resources[instance_resource_name] = instance_resource
 
@@ -116,11 +133,11 @@ def handler(event, context):
 
         fragment = event['fragment']
         volumes_data = json.loads(event['templateParameterValues']['VolumesJson'])
-        instance_tags_json = event['templateParameterValues'].get('InstanceTagsJson', '[]')
+        instance_tags = json.loads(event['templateParameterValues'].get('InstanceTagsJson', ''))
         security_group_ids_json = event['templateParameterValues'].get('SecurityGroupIDSSMJson', '[]')
 
         logger.info(f"Parsed VolumesJson: {json.dumps(volumes_data, indent=2)}")
-        logger.info(f"Parsed InstanceTagsJson: {instance_tags_json}")
+        logger.info(f"Parsed InstanceTagsJson: {json.dumps(instance_tags, indent=2)}")
         logger.info(f"Parsed SecurityGroupIDSSMJson: {security_group_ids_json}")
 
         ds_dev_tools_application = event['templateParameterValues']['DSDevToolsApplication']
@@ -142,13 +159,12 @@ def handler(event, context):
         
         add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_id)
         logger.info('add_volumes() completed')
-        
-        instance_tags = json.loads(instance_tags_json)
+                
         add_instance_tags(resources, instance_tags, ds_dev_tools_application)
         logger.info('add_instance_tags() completed')
 
         security_group_ids = json.loads(security_group_ids_json)
-        add_security_group_ids(resources, security_group_ids, ec2_instance_id)
+        add_security_group_ids(resources, security_group_ids)
         logger.info('add_security_group_ids() completed')
 
         logger.info(f"Final resources: {json.dumps(resources, indent=2)}")
