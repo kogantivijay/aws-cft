@@ -18,8 +18,8 @@ DEFAULT_VOLUME_TYPE = "gp3"  # Assign your default volume type
 
 def validate_volumes_data(volumes_data):
     for idx, volume in enumerate(volumes_data):
-        required_keys = ["VolumeType", "Size", "Device", "Iops"]
-        
+        required_keys = ["VolumeType", "Size", "Device"]
+
         for key in required_keys:
             if key not in volume:
                 raise ValueError(f"Volume {idx} is missing required key '{key}'")
@@ -29,7 +29,7 @@ def validate_volumes_data(volumes_data):
 
 def add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_id):
     block_device_mappings = resources["EC2Instance"]["Properties"].get("BlockDeviceMappings", [])
-    
+
     for idx, volume in enumerate(volumes_data):
         logger.info(f"Processing volume {idx}: {volume}")
         is_root_volume = volume.get("RootVolume", False)
@@ -138,13 +138,18 @@ def handler(event, context):
         logger.info(f"Initial BlockDeviceMappings: {json.dumps(block_device_mappings, indent=2)}")
 
         validate_volumes_data(volumes_data)
+        logger.info('validate_volumes_data() completed')
+        
         add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_id)
-
+        logger.info('add_volumes() completed')
+        
         instance_tags = json.loads(instance_tags_json)
         add_instance_tags(resources, instance_tags, ds_dev_tools_application)
+        logger.info('add_instance_tags() completed')
 
         security_group_ids = json.loads(security_group_ids_json)
         add_security_group_ids(resources, security_group_ids, ec2_instance_id)
+        logger.info('add_security_group_ids() completed')
 
         logger.info(f"Final resources: {json.dumps(resources, indent=2)}")
         fragment['Resources'] = resources
