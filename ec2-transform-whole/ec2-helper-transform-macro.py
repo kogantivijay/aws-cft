@@ -6,7 +6,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 ssm = boto3.client('ssm')
-parameter = ssm.get_parameter(Name='/app/dsdevops/common/kms/cmk-ebs-key', WithDecryption=True)
+parameter = ssm.get_parameter(Name='/app/common/kms/ebs-key', WithDecryption=True)
 KMS_KEY_ARN = parameter['Parameter']['Value']
 
 DEFAULT_IOPS = 3000  # Assign your default IOPS
@@ -27,7 +27,7 @@ def validate_volumes_data(volumes_data):
         # TODO: Write logic to do case sensitive check for keys 
 
 
-def add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_id):
+def add_volumes(resources, volumes_data, dev_tools_application, ec2_instance_id, ec2_instance_az):
     block_device_mappings = resources["EC2Instance"]["Properties"].get("BlockDeviceMappings", [])
 
     for idx, volume in enumerate(volumes_data):
@@ -65,8 +65,11 @@ def add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_
                 ebs_data["Throughput"] = volume.get("Throughput", DEFAULT_THROUGHPUT)
 
             ebs_data["Tags"] = volume.get("Tags", [])  # handle the tags
-            # Add DSDevToolsApplication as a tag for non-root volumes
-            ebs_data["Tags"].append({"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application})
+            # Add DevToolsApplication as a tag for non-root volumes
+            ebs_data["Tags"].append({"Key": "Application", "Value": dev_tools_application})
+            
+            # Add AvailabilityZone for non-root volumes
+            ebs_data["AvailabilityZone"] = ec2_instance_az
 
             volume_resource_name = f"Volume{idx}"
             attachment_resource_name = f"VolumeAttachment{idx}"
@@ -88,8 +91,8 @@ def add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_
             }
 
 
-def add_instance_tags(resources, instance_tags, ds_dev_tools_application):
-    default_tags = [{"Key": "DSDevToolsApplication", "Value": ds_dev_tools_application}]
+def add_instance_tags(resources, instance_tags, dev_tools_application):
+    default_tags = [{"Key": "DevToolsApplication", "Value": dev_tools_application}]
     instance_resource_name = "EC2Instance"
     instance_resource = resources.get(instance_resource_name, {})
     instance_properties = instance_resource.get("Properties", {})
@@ -102,19 +105,19 @@ def add_instance_tags(resources, instance_tags, ds_dev_tools_application):
     resources[instance_resource_name] = instance_resource
 
 
-def add_security_groups(resources, security_group_ids):
+def add_security_group_ids(resources, security_group_ids):
     instance_resource_name = "EC2Instance"
     instance_resource = resources.get(instance_resource_name, {})
     instance_properties = instance_resource.get("Properties", {})
     instance_properties["SecurityGroupIds"] = []
 
     # Retrieve the default security group ID from SSM
-    default_sg_ssm_key = "/app/dsdevops/common/default-security-group-id"  # Replace with the actual SSM parameter key
+    default_sg_ssm_key = "/app/team/common/default-security-group-id"  # Replace with the actual SSM parameter key
     response = ssm.get_parameter(Name=default_sg_ssm_key)
     default_sg_id = response['Parameter']['Value']
 
     # Add the default security group ID only if it's not already present in the list
-    if default_sg_id not in security_group_ids:
+    if default_sg_ssm_key not in security_group_ids:
         instance_properties["SecurityGroupIds"].append(default_sg_id)
 
     for ssm_key in security_group_ids:
@@ -140,8 +143,8 @@ def handler(event, context):
         logger.info(f"Parsed InstanceTagsJson: {json.dumps(instance_tags, indent=2)}")
         logger.info(f"Parsed SecurityGroupIDSSMJson: {security_group_ids_json}")
 
-        ds_dev_tools_application = event['templateParameterValues']['DSDevToolsApplication']
-        logger.info(f"DSDevToolsApplication: {ds_dev_tools_application}")
+        dev_tools_application = event['templateParameterValues']['DevToolsApplication']
+        logger.info(f"DevToolsApplication: {dev_tools_application}")
 
         ec2_instance_id = {"Ref": "EC2Instance"}
         ec2_instance_az = {"Fn::GetAtt": ["EC2Instance", "AvailabilityZone"]}
@@ -157,10 +160,10 @@ def handler(event, context):
         validate_volumes_data(volumes_data)
         logger.info('validate_volumes_data() completed')
         
-        add_volumes(resources, volumes_data, ds_dev_tools_application, ec2_instance_id)
+        add_volumes(resources, volumes_data, dev_tools_application, ec2_instance_id, ec2_instance_az)
         logger.info('add_volumes() completed')
                 
-        add_instance_tags(resources, instance_tags, ds_dev_tools_application)
+        add_instance_tags(resources, instance_tags, dev_tools_application)
         logger.info('add_instance_tags() completed')
 
         security_group_ids = json.loads(security_group_ids_json)
