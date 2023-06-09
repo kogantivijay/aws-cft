@@ -127,7 +127,7 @@ Ec2 Instance Types
     "InstanceTagsJson": "{\"Name\":\"TestInstance\",\"Environment\":\"Dev\"}",
     "SecurityGroupIDSSMJson": "[\"/app/team/security-groups/sg1\",\"/app/team/security-groups/sg2\"]",
     "DevToolsApplication": "testApp",
-     "UserDataJson": "{\"Application\": {\"SERVER\": {\"NAS_IP\": \"28.X\"}}, \"cHEF_RunList\": \"role[dxdt],role[ds]\", \"ca_env\": \"dev\"}"
+     "UserDataJson": "{\"Application\": {\"SERVER\": {\"dd_ip\": \"28.X\"}}, \"cHEF_RunList\": \"role[ss],role[ss]\", \"ca_env\": \"dds\"}"
   }
 }
 
