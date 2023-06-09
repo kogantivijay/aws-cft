@@ -112,3 +112,22 @@ Ec2 Instance Types
   "requestId": "123456"
 }
 
+
+{
+  "requestId": "unique-request-id",
+  "fragment": {
+    "Resources": {
+      "EC2Instance": {
+        "Properties": {}
+      }
+    }
+  },
+  "templateParameterValues": {
+    "VolumesJson": "[{\"VolumeType\":\"gp2\",\"Size\":50,\"Device\":\"/dev/sda1\",\"RootVolume\":true}]",
+    "InstanceTagsJson": "{\"Name\":\"TestInstance\",\"Environment\":\"Dev\"}",
+    "SecurityGroupIDSSMJson": "[\"/app/team/security-groups/sg1\",\"/app/team/security-groups/sg2\"]",
+    "DevToolsApplication": "testApp",
+    "UserDataJson": "#!/bin/bash\necho 'Hello, World!' > /tmp/hello.txt"
+  }
+}
+

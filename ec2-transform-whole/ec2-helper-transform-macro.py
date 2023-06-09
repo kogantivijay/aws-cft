@@ -26,6 +26,19 @@ def validate_volumes_data(volumes_data):
         case_sensitive_keys = ["RootVolume", "VolumeType", "Device"]
         # TODO: Write logic to do case sensitive check for keys 
 
+def add_user_data(resources, user_data_json):
+    instance_resource_name = "EC2Instance"
+    instance_resource = resources.get(instance_resource_name, {})
+    instance_properties = instance_resource.get("Properties", {})
+    # converting to json incase if we want to perform any manipulation at a late point. It's easier to manipulate json than string and then convert back to string using dumps
+    user_data = json.loads(user_data_json)
+    instance_properties["UserData"] = {
+        'Fn::Base64': {
+            'Fn::Sub': json.dumps(user_data)
+        }
+    }
+    instance_resource["Properties"] = instance_properties
+    resources[instance_resource_name] = instance_resource
 
 def add_volumes(resources, volumes_data, dev_tools_application, ec2_instance_id, ec2_instance_az):
     block_device_mappings = resources["EC2Instance"]["Properties"].get("BlockDeviceMappings", [])
@@ -138,6 +151,7 @@ def handler(event, context):
         volumes_data = json.loads(event['templateParameterValues']['VolumesJson'])
         instance_tags = json.loads(event['templateParameterValues'].get('InstanceTagsJson', ''))
         security_group_ids_json = event['templateParameterValues'].get('SecurityGroupIDSSMJson', '[]')
+        user_data_json = event['templateParameterValues'].get('UserDataJson', '')
 
         logger.info(f"Parsed VolumesJson: {json.dumps(volumes_data, indent=2)}")
         logger.info(f"Parsed InstanceTagsJson: {json.dumps(instance_tags, indent=2)}")
@@ -169,6 +183,9 @@ def handler(event, context):
         security_group_ids = json.loads(security_group_ids_json)
         add_security_group_ids(resources, security_group_ids)
         logger.info('add_security_group_ids() completed')
+
+        add_user_data(resources, user_data_json)
+        logger.info('add_user_data() completed')
 
         logger.info(f"Final resources: {json.dumps(resources, indent=2)}")
         fragment['Resources'] = resources
