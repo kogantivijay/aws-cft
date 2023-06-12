@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  SecurityGroupsInputJson:
+    Type: String
+
+Resources:
+  SecurityGroupMacro:
+    Type: AWS::CloudFormation::Macro
+    Properties:
+      Name: SecurityGroupMacro
+      FunctionName: !Sub ${AWS::StackName}-SecurityGroupMacro
+
+Transform:
+  - SecurityGroupMacro
+
+Outputs:
+  SecurityGroupIds:
+    Value: !GetAtt SecurityGroupMacro.Outputs.SecurityGroupIds
