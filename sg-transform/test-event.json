@@ -1,0 +1,61 @@
+{
+    "input": [
+      {
+        "name": "SecurityGroup-1",
+        "description": "Description of SecurityGroup-1",
+        "rules": [
+          {
+            "type": "ingress",
+            "fromPort": 22,
+            "toPort": 23,
+            "cidrRanges": ["26.1.12.0/24", "28.0.0.0/8", "27.0.0.1/32"],
+            "description": "Description of ingress rule"
+          },
+          {
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          }
+        ],
+        "tags": [
+          {
+            "Key": "Tag1",
+            "Value": "Value1"
+          },
+          {
+            "Key": "Tag2",
+            "Value": "Value2"
+          }
+        ]
+      },
+      {
+        "name": "SecurityGroup-2",
+        "description": "Description of SecurityGroup-2",
+        "rules": [
+          {
+            "type": "ingress",
+            "fromPort": 443,
+            "toPort": 443,
+            "description": "Description of ingress rule",
+            "sourceSecurityGroupId": "ssm:/path/to/sourceSecurityGroupId"
+          },
+          {
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "cidrRanges": ["21.1.12.0/24", "18.0.0.0/8", "17.0.0.1/32"],
+            "description": "Description of egress rule"
+          }
+        ],
+        "tags": [
+          {
+            "Key": "Tag3",
+            "Value": "Value3"
+          }
+        ]
+      }
+    ]
+  }
+  
