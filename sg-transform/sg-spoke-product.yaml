@@ -4,6 +4,9 @@ Parameters:
   SecurityGroupsInputJson:
     Type: String
 
+  Application:
+    Type: String
+
 Resources:
   SecurityGroupMacro:
     Type: AWS::CloudFormation::Macro
@@ -14,6 +17,3 @@ Resources:
 Transform:
   - SecurityGroupMacro
 
-Outputs:
-  SecurityGroupIds:
-    Value: !GetAtt SecurityGroupMacro.Outputs.SecurityGroupIds

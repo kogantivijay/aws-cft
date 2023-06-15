@@ -61,15 +61,41 @@ def transform_security_group_template(input_json, application):
             transformed_rules.append(transformed_rule)
 
         transformed_group = {
-            'name': name,
-            'description': description,
-            'rules': transformed_rules,
-            'tags': [{'Key': tag['Key'], 'Value': tag['Value']} for tag in tags] + [{'Key': 'iamfilter', 'Value': application}]
+            'Type': 'AWS::EC2::SecurityGroup',
+            'Properties': {
+                'GroupName': name,
+                'GroupDescription': description,
+                'VpcId': resolve_ssm_parameter(f'/app/common/security-groups/{application}-VpcId'),
+                'SecurityGroupIngress': [],
+                'SecurityGroupEgress': [],
+                'Tags': [{'Key': 'iamfilter', 'Value': application}] + tags
+            }
         }
+
+        for rule in transformed_rules:
+            rule_type = 'SecurityGroupIngress' if rule_type == 'ingress' else 'SecurityGroupEgress'
+            transformed_group['Properties'][rule_type].append(rule)
 
         transformed_template.append(transformed_group)
 
     return transformed_template
+
+
+def create_ssm_parameter_blocks(transformed_template, application):
+    ssm_parameters = []
+    for group in transformed_template:
+        ssm_parameter = {
+            'Type': 'AWS::SSM::Parameter',
+            'Properties': {
+                'Name': f"/app/common/security-groups/{application}-{group['Properties']['GroupName']}",
+                'Description': "SSM Parameter for Security Group ID",
+                'Type': 'String',
+                'Value': {'Fn::GetAtt': [group['Properties']['GroupName'], 'GroupId']}
+            }
+        }
+        ssm_parameters.append(ssm_parameter)
+
+    return ssm_parameters
 
 
 def resolve_ssm_parameter(parameter):
@@ -96,10 +122,13 @@ def lambda_handler(event, context):
         transformed_template = transform_security_group_template(input_json, application)
         logger.info(f"Transformed Template: {json.dumps(transformed_template, indent=2)}")
 
+        ssm_parameters = create_ssm_parameter_blocks(transformed_template, application)
+        logger.info(f"SSM Parameters: {json.dumps(ssm_parameters, indent=2)}")
+
         fragment = {
             'requestId': event['requestId'],
             'status': 'success',
-            'fragment': transformed_template
+            'fragment': transformed_template + ssm_parameters
         }
         return fragment
 
