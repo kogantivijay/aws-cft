@@ -16,9 +16,21 @@ def transform_security_group_template(input_json, application):
         description = group.get('description', '')
         rules = group['rules']
         tags = group.get('tags', [])
+        transformed_group = {
+            'Type': 'AWS::EC2::SecurityGroup',
+            'Properties': {
+                'GroupName': name,
+                'GroupDescription': description,
+                'VpcId': resolve_ssm_parameter(f'/app/common/security-groups/{application}-VpcId'),
+                'SecurityGroupIngress': [],
+                'SecurityGroupEgress': [],
+                'Tags': [{'Key': 'iamfilter', 'Value': application}] + tags
+            }
+        }
 
-        transformed_rules = []
+        
         for rule in rules:
+            transformed_rules = []
             rule_type = rule['type']
             from_port = rule.get('fromPort')
             to_port = rule.get('toPort')
@@ -36,18 +48,22 @@ def transform_security_group_template(input_json, application):
             if rule.get('ipProtocol') == '-1':
                 raise ValueError("Invalid value '-1' specified for 'ipProtocol' in rule.")
 
-            transformed_rule = {
-                'FromPort': from_port,
-                'ToPort': to_port,
-                'Description': description,
-                'IpProtocol': rule.get('ipProtocol', 'tcp')
-            }
+
 
             if rule_type == 'ingress':
                 if destination_security_group_id:
                     raise ValueError("Ingress rule should not have 'destinationSecurityGroupId'.")
                 if source_security_group_id:
-                    transformed_rule['SourceSecurityGroupId'] = source_security_group_id
+                    transformed_rules.append({
+                        'FromPort': from_port,
+                        'ToPort': to_port,
+                        'Description': description,
+                        'IpProtocol': rule.get('ipProtocol', 'tcp'),
+                        'SourceSecurityGroupId': source_security_group_id,
+
+                    })
+                rule_type = 'SecurityGroupIngress' if rule_type == 'ingress' else 'SecurityGroupEgress'
+                transformed_group['Properties'][rule_type].append(transformed_rules)
                 elif cidr_ranges:
                     transformed_rule['CidrIp'] = cidr_ranges[0]
             elif rule_type == 'egress':
@@ -58,23 +74,13 @@ def transform_security_group_template(input_json, application):
                 elif cidr_ranges:
                     transformed_rule['CidrIp'] = cidr_ranges[0]
 
+
             transformed_rules.append(transformed_rule)
 
-        transformed_group = {
-            'Type': 'AWS::EC2::SecurityGroup',
-            'Properties': {
-                'GroupName': name,
-                'GroupDescription': description,
-                'VpcId': resolve_ssm_parameter(f'/app/common/security-groups/{application}-VpcId'),
-                'SecurityGroupIngress': [],
-                'SecurityGroupEgress': [],
-                'Tags': [{'Key': 'iamfilter', 'Value': application}] + tags
-            }
-        }
+
 
         for rule in transformed_rules:
-            rule_type = 'SecurityGroupIngress' if rule_type == 'ingress' else 'SecurityGroupEgress'
-            transformed_group['Properties'][rule_type].append(rule)
+
 
         transformed_template.append(transformed_group)
 
@@ -115,7 +121,7 @@ def resolve_ssm_parameter(parameter):
 def lambda_handler(event, context):
     try:
         logger.info('Transform Security Group Template')
-        input_json = event['input']
+        input_json = json.loads(event['input'])
         application = event['application']
         logger.info(f"Input JSON: {json.dumps(input_json, indent=2)}")
 
