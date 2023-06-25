@@ -1,0 +1,14 @@
+[
+    {
+      "Key": "ParameterKey1",
+      "Value": "ParameterValue1"
+    },
+    {
+      "Key": "ParameterKey2",
+      "Value": "ParameterValue2"
+    },
+    {
+      "Key": "ParameterKey3",
+      "Value": "external:json:app-sg.json"
+    }
+]
