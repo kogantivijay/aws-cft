@@ -4,11 +4,11 @@
       "Value": "ParameterValue1"
     },
     {
-      "Key": "ParameterKey2",
-      "Value": "ParameterValue2"
+      "Key": "VolumesJson",
+      "Value": "external-json:app-sg.json"
     },
     {
-      "Key": "ParameterKey3",
-      "Value": "external:json:app-sg.json"
+      "Key": "SecurityGroupInputJson",
+      "Value": "external-json:app-sg.json"
     }
 ]

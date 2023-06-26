@@ -1,5 +1,5 @@
 {
-    "input": [
+    "SecurityGroupInputJson": [
       {
         "name": "SecurityGroup-1",
         "description": "Description of SecurityGroup-1",
@@ -56,6 +56,39 @@
           }
         ]
       }
-    ]
+    ],
+    "VolumesJson":[
+      {
+          "Device": "/dev/sdh",
+          "Size": 100,
+          "VolumeType": "gp2",
+          "Iops": 3000,
+          "RootVolume": true,
+          "Tags": [
+              {"Key": "Name", "Value": "RootVolume"},
+              {"Key": "Environment", "Value": "Production"}
+          ]
+      },
+      {
+          "Device": "/dev/sdi",
+          "SnapshotId": "snap-0abcd1234efgh5678",
+          "VolumeType": "io1",
+          "Iops": 1000,
+          "Throughput": 4000,
+          "RootVolume": false,
+          "Tags": [
+              {"Key": "Name", "Value": "DataVolume"},
+              {"Key": "Environment", "Value": "Production"}
+          ]
+      },
+      {
+          "Device": "/dev/sdj",
+          "Size": 50,
+          "VolumeType": "gp3",
+          "Iops": 3000,
+          "Throughput": 125,
+          "RootVolume": false
+      }
+  ]
   }
   
