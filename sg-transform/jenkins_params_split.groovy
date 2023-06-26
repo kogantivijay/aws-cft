@@ -2,75 +2,91 @@ pipeline {
     agent any
 
     stages {
-        stage('Modify JSON') {
+        stage('Read, Modify, Write JSON') {
             steps {
                 script {
-                    def paramsJsonPath = 'sg-transform\\params.json'
-                    def maxChars = 2000
-                    def maxSplitCount = 10
+                    // A helper function to read JSON from a file
+                    def readJSON(String filepath) {
+                        return readJSON(file: filepath)
+                    }
 
-                    def paramsJson = readJson file: paramsJsonPath
+                    def paramsJsonPath = 'sg-transform//params.json'
+                    def maxCharsForSGInputJson = 4050
+                    def maxSplitCountForSGInputJson = 10
+                    def maxCharsForOtherKeys = 4095
+
+                    def paramsJson = readJSON(paramsJsonPath)
                     println paramsJson
 
                     def parameters = []
 
                     paramsJson.each { param ->
-                        def key = param.Key
-                        def value = param.Value
+                        def key = param.ParameterKey
+                        def value = param.ParameterValue
 
-                        if (value.startsWith('external:json:')) {
-                            def externalJsonPath = value.replace('external:json:', '')
-                            def externalJsonContent = readFile('sg-transform\\' + externalJsonPath).trim()
-                            def json = readJSON(text: externalJsonContent)
-
-                            def jsonStr = JsonOutput.toJson(json)
+                        if (value.startsWith('external-json:')) {
+                            def externalJsonPath = value.replace('external-json:', '')
+                            def externalJsonContent = readFile('sg-transform//' + externalJsonPath).trim()
+                            def externalJson = readJSONFromText(externalJsonContent)
+                            
+                            // Retrieve the value from the external JSON using the ParameterKey
+                            def jsonValue = externalJson[key]
+                            println "External JSON value: ${jsonValue}"
+                            
+                            if (jsonValue == null || jsonValue.contains(null)) {
+                                error("No corresponding property for ${key} found in the external JSON file.")
+                            }
+                            
+                            // Stringify and split the value into multiple parameters if it exceeds the maximum character limit
+                            def jsonStr = JsonOutput.toJson(jsonValue)
                             println "Total length: ${jsonStr.length()}"
                             println "Total lines: ${jsonStr.count('\n')}"
                             println "stringified JSON: ${jsonStr}" 
 
+                            def maxChars = (key == 'SecurityGroupInputJson') ? maxCharsForSGInputJson : maxCharsForOtherKeys
+                            def maxSplitCount = (key == 'SecurityGroupInputJson') ? maxSplitCountForSGInputJson : 1
+
                             if (jsonStr.length() > maxChars * maxSplitCount) {
-                                error("Total character limit exceeded. Please reduce the size of the external JSON file.")
+                                error("Total character limit exceeded for ${key}. Please reduce the size of the external JSON file.")
                             }
 
-                            // Split the value into multiple parameters if it exceeds the maximum character limit
-                            if (jsonStr.length() >= maxChars) {
+                            if (jsonStr.length() > maxChars || key == 'SecurityGroupInputJson') {
                                 def currentPart = ''
                                 def currentIndex = 1
-
+                                    
                                 jsonStr.each { 
                                     currentPart += it
-                                    println "Current part length: ${currentPart.length()}" 
                                     if (currentPart.length() > maxChars) {
                                         parameters << [
-                                            Key: "securityGroupJson${currentIndex}",
-                                            Value: currentPart
+                                            ParameterKey: "${key}${currentIndex}",
+                                            ParameterValue: currentPart
                                         ]
                                         currentPart = ''
                                         currentIndex++
                                     }
                                 }
-
+                                    
                                 if (currentPart) {
                                     parameters << [
-                                        Key: "securityGroupJson${currentIndex}",
-                                        Value: currentPart
+                                        ParameterKey: "${key}${currentIndex}",
+                                        ParameterValue: currentPart
                                     ]
                                 }
                             } else {
                                 parameters << [
-                                    Key: key,
-                                    Value: jsonStr
+                                    ParameterKey: key,
+                                    ParameterValue: jsonStr
                                 ]
                             }
                         } else {
                             parameters << [
-                                Key: key,
-                                Value: value
+                                ParameterKey: key,
+                                ParameterValue: value
                             ]
                         }
                     }
 
-                    writeFile(file: 'sg-transform//modified-params.json', text: new groovy.json.JsonBuilder(parameters).toPrettyString())
+                    writeFile(file: paramsJsonPath, text: new groovy.json.JsonBuilder(parameters).toPrettyString())
                 }
             }
         }

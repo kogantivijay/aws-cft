@@ -1,10 +1,12 @@
-{
-    "SecurityGroupInputJson": [
+{    
+    "SecurityGroupInputJson":[
       {
         "name": "SecurityGroup-1",
+        "groupLogicalID": "SecurityGroup1",
         "description": "Description of SecurityGroup-1",
         "rules": [
           {
+              "ruleLogicalID": "SecurityGroup1Rule1",
             "type": "ingress",
             "fromPort": 22,
             "toPort": 23,
@@ -12,12 +14,118 @@
             "description": "Description of ingress rule"
           },
           {
+              "ruleLogicalID": "SecurityGroup1Rule2",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule3",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule4",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule5",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule6",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule7",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule8",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },        
+          {
+              "ruleLogicalID": "SecurityGroup1Rule9",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule10",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule11",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule12",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule13",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },
+          {
+              "ruleLogicalID": "SecurityGroup1Rule14",
+            "type": "egress",
+            "fromPort": 27,
+            "toPort": 29,
+            "description": "Description of egress rule",
+            "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
+          },        
+          {
+              "ruleLogicalID": "SecurityGroup1Rule15",
             "type": "egress",
             "fromPort": 27,
             "toPort": 29,
             "description": "Description of egress rule",
             "destinationSecurityGroupId": "ssm:/path/to/destinationSecurityGroupId"
           }
+  
         ],
         "tags": [
           {
@@ -32,9 +140,11 @@
       },
       {
         "name": "SecurityGroup-2",
+        "groupLogicalID": "SecurityGroup2",
         "description": "Description of SecurityGroup-2",
         "rules": [
           {
+              "ruleLogicalID": "SecurityGroup2Rule1",
             "type": "ingress",
             "fromPort": 443,
             "toPort": 443,
@@ -42,6 +152,7 @@
             "sourceSecurityGroupId": "ssm:/path/to/sourceSecurityGroupId"
           },
           {
+              "ruleLogicalID": "SecurityGroup2Rule2",
             "type": "egress",
             "fromPort": 27,
             "toPort": 29,

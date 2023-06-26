@@ -1,14 +1,18 @@
 [
     {
-      "Key": "ParameterKey1",
-      "Value": "ParameterValue1"
+      "ParameterKey": "ParameterKey1",
+      "ParameterValue": "ParameterValue1"
     },
     {
-      "Key": "VolumesJson",
-      "Value": "external-json:app-sg.json"
+      "ParameterKey": "VolumesJson",
+      "ParameterValue": "external-json:app-sg.json"
     },
     {
-      "Key": "SecurityGroupInputJson",
-      "Value": "external-json:app-sg.json"
+      "ParameterKey": "SecurityGroupInputJson",
+      "ParameterValue": "external-json:app-sg.json"
+    },
+    {
+      "ParameterKey": "testKey",
+      "ParameterValue": "testValue"
     }
 ]
